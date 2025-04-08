@@ -13,6 +13,13 @@ from utils.installers import install_package, is_python_package_installed
 from llm.llm_handler import handle_unknown_command
 from config_loader import load_command_mappings, save_command_mappings
 
+# Try importing the FAQ module
+try:
+    from commands.faq import show_faq
+except ImportError:
+    def show_faq():
+        print(Fore.RED + "FAQ module not found!")
+
 def is_command_installed(command):
     """Check if a command exists in the system path."""
     # First check if it's available directly as a command
@@ -44,6 +51,9 @@ def is_package_installed(package_name, language="system"):
             return package_name in result.stdout
         except Exception:
             return False
+    elif language == "internal":
+        # Internal commands are always "installed"
+        return True
     else:
         return is_command_installed(package_name)
 
@@ -109,6 +119,11 @@ def handle_command(command, mappings, config):
     # Extract the base command (first word) for checking mappings
     base_command = command.split()[0] if ' ' in command else command
     
+    # Handle internal commands
+    if base_command.lower() == "faq":
+        show_faq()
+        return True
+    
     # Special case handlers for common development tools
     if base_command == "mvn" or base_command == "maven":
         print(Fore.YELLOW + "[Aegis] Maven commands detected.")
@@ -134,6 +149,14 @@ def handle_command(command, mappings, config):
         info = mappings[base_command]
         print(f"DEBUG: Found mapping for '{base_command}': {info}")
         language = info.get("language", "system")
+        
+        # Special handling for internal commands
+        if language == "internal":
+            if base_command.lower() == "faq":
+                show_faq()
+            else:
+                print(Fore.YELLOW + f"[Aegis] Internal command '{base_command}' not implemented.")
+            return True
         
         # Check if already installed
         if is_package_installed(base_command, language):

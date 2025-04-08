@@ -10,14 +10,39 @@ from colorama import Fore, Style, init
 init(convert=True)
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.styles import Style as PromptStyle
+
+# Import the FAQ module
+try:
+    from commands.faq import show_faq
+except ImportError:
+    def show_faq():
+        print(Fore.RED + "FAQ module not found!")
 
 init(autoreset=True)
 
+def display_ascii_art():
+    """Display ASCII art from the resource file"""
+    try:
+        art_path = os.path.join(os.path.dirname(__file__), "resources", "ascii_art.txt")
+        if os.path.exists(art_path):
+            with open(art_path, "r") as f:
+                art = f.read()
+            print(Fore.CYAN + art + Style.RESET_ALL)
+        else:
+            print(Fore.RED + "ASCII art file not found at:", art_path)
+    except Exception as e:
+        print(Fore.RED + f"Error displaying ASCII art: {e}")
+
 def main():
     os.system("cls" if os.name == "nt" else "clear")
-    print(Fore.CYAN + Style.BRIGHT + "$ aegis-shell")
-    print(Fore.YELLOW + "[Aegis] Welcome to the ultimate AI-powered terminal shell.")
-    print(Fore.YELLOW + "Type 'exit' to quit.\n")
+    
+    # Display ASCII art
+    display_ascii_art()
+    
+    print(Fore.CYAN + Style.BRIGHT + "Welcome to the ultimate AI-powered terminal shell.")
+    print(Fore.MAGENTA + "Made with ❤️  by Tanish, Nidhi & Nishant")
+    print(Fore.YELLOW + "Type 'exit' to quit. Type 'faq' for help.\n")
 
     try:
         mappings = load_command_mappings()
@@ -28,9 +53,26 @@ def main():
     
     config = load_config()
     
+    # Add FAQ command to mappings
+    if "faq" not in mappings:
+        mappings["faq"] = {
+            "language": "internal",
+            "description": "Show frequently asked questions"
+        }
+    
     # Setup advanced autocomplete using prompt_toolkit
     command_completer = WordCompleter(list(mappings.keys()), ignore_case=True)
-    session = PromptSession(message="aegis> ", completer=command_completer)
+    
+    # Custom prompt style
+    prompt_style = PromptStyle.from_dict({
+        'prompt': 'ansicyan bold',
+    })
+    
+    session = PromptSession(
+        message=lambda: Fore.CYAN + Style.BRIGHT + "$ aegis-shell " + Style.RESET_ALL,
+        completer=command_completer,
+        style=prompt_style
+    )
 
     while True:
         try:
@@ -40,6 +82,12 @@ def main():
                 break
             if cmd == "":
                 continue
+                
+            # Special handling for FAQ command
+            if cmd.lower() == "faq":
+                show_faq()
+                continue
+                
             handle_command(cmd, mappings, config)
         except KeyboardInterrupt:
             continue
