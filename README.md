@@ -9,249 +9,108 @@
 
 </div>
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/username/aegis-shell/main/resources/aegis_logo.png" alt="Aegis Shell Logo" width="250"/>
-</p>
-
 <div align="center">
   <h3>🛡️ The AI-Powered Developer Command Center 🛡️</h3>
-  <p><i>Made with ❤️ by Tanish, Nidhi & Nishant</i></p>
 </div>
-
----
 
 ## 📖 Overview
 
-**Aegis Shell** is an intelligent terminal companion that transforms your development workflow by eliminating the friction between you and your tools. Stop wasting time on package installation errors, environment configurations, and researching CLI commands. Aegis Shell detects what's missing and handles it for you, keeping you in your creative flow.
-
-<div align="center">
-<img src="https://img.shields.io/badge/🚀%20Streamlined%20Development-6C5CE7?style=for-the-badge" alt="Streamlined Development" />
-<img src="https://img.shields.io/badge/🤖%20AI%20Assistant-00B894?style=for-the-badge" alt="AI Assistant" />
-<img src="https://img.shields.io/badge/⚡%20Cross%20Platform-FF7675?style=for-the-badge" alt="Cross Platform" />
-</div>
-
----
+Aegis Shell is your intelligent terminal companion that streamlines development workflow by automatically managing tools and dependencies. It eliminates common development friction points by handling package installations, providing AI-powered assistance, and maintaining cross-platform compatibility.
 
 ## ✨ Key Features
 
 ### 🔍 Smart Command Detection
-- **Automatic Tool Recognition:** Identifies when commands aren't installed on your system
-- **Instant Installation Offers:** Provides one-click solutions to install missing tools
-- **Cross-Platform Compatibility:** Works with the appropriate package manager for your OS
+- Automatically identifies missing system tools
+- Provides instant installation solutions
+- Works with your OS's native package manager
 
 ### 🤖 AI-Powered Assistant
-- **Unknown Command Analysis:** Intelligently identifies what tool you're trying to use
-- **Smart Installation Suggestions:** Recommends the correct package and version
-- **Context-Aware Responses:** Understands the developer's intent
+- Analyzes unknown commands
+- Suggests correct packages and versions
+- Provides context-aware assistance
 
-### 🛠️ Multi-Environment Support
-- **Cross-Platform:** Works seamlessly on Windows, macOS, and Linux
-- **Multiple Package Managers:** Supports pip, npm, winget, apt, brew, and more
-- **Smart Shell Switching:** Intelligently switches between CMD, PowerShell, and Bash
+### 🛠️ Cross-Platform Support
+- Compatible with Windows, macOS, and Linux
+- Supports major package managers (pip, npm, winget, apt, brew)
+- Smart shell detection (CMD, PowerShell, Bash)
 
-### 📦 Package Management
-- **Auto-Detection:** Identifies the right package manager for each tool
-- **Interactive Installation:** Shows real-time progress with beautiful progress bars
-- **Post-Installation Execution:** Immediately runs your original command after installation
+## 🚀 Quick Start
 
-### 🔒 Secure & Personalized
-- **User-Specific API Keys:** Each user maintains their own secure AI API key
-- **Local Configuration:** Settings stored in the user's home directory
-- **Permission Handling:** Detects and advises on admin privileges when needed
-
----
-
-## 🖥️ Installation
-
-<div align="center">
-<img src="https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Windows" />
-<img src="https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS" />
-<img src="https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Linux" />
-</div>
-
-### Windows
-
-```powershell
-# Option 1: Run the installer
-AegisShell_Setup.exe
-
-# Option 2: Extract the zip and run
-Extract AegisShell.zip to any location
-Run AegisShell.exe
-```
-
-### macOS / Linux
-
-```bash
-# Extract the zip
-unzip AegisShell.zip -d /preferred/location
-
-# Run the executable
-cd /preferred/location/AegisShell
-./AegisShell
-```
-
-### Building from Source
+### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/username/aegis-shell.git
+git clone https://github.com/tanishpoddar/aegis-shell.git
 cd aegis-shell
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the setup script
+# Run setup
 python setup.py
 ```
 
----
+### First Time Setup
 
-## 🚀 Getting Started
+1. Launch Aegis Shell
+2. When prompted, set up your OpenRouter API key:
+   - Get your key from [OpenRouter](https://openrouter.ai/keys)
+   - Enter the key when prompted
 
-### First-Time Setup
-
-1. Launch Aegis Shell from your installation location
-2. You'll see the welcome ASCII art and introduction
-3. When you first use an AI feature, you'll be prompted to set up your API key:
-   - Go to [OpenRouter Keys](https://openrouter.ai/keys)
-   - Create a free account and generate an API key
-   - Copy and paste the key when prompted
-
-### Using Aegis Shell
+### Basic Usage
 
 ```bash
-# Basic command usage (just like a regular terminal)
+# Regular terminal commands
 $ aegis-shell ls -la
 $ aegis-shell python script.py
-$ aegis-shell npm start
 
-# When you use an unknown tool, Aegis offers to install it
+# Handling unknown tools
 $ aegis-shell flutter --version
-[Aegis] 'flutter' not found on your system. Installation command: winget install Flutter.Flutter
-Do you want to install it? [y/N]: y
-[Aegis] Installing flutter via winget [██████████] 100%
-[Aegis] Successfully installed flutter!
-[Aegis] Now executing your original command.
-
-# AI assistance for truly unknown commands
-$ aegis-shell someobscuretool
-[Aegis] Unknown command: 'someobscuretool'
-[Aegis] Would you like me to ask the AI for help? [y/N]: y
-[LLM AI Response]:
-Based on analysis, 'someobscuretool' might be a data analysis CLI tool. 
-To install it, run: pip install someobscuretool
+[Aegis] 'flutter' not found. Install? [y/N]: y
+[Aegis] Installing flutter... [██████████] 100%
 ```
 
----
+## 🔧 Technical Details
 
-## 🔧 Technical Architecture
+- Built with Python 3.8+
+- Uses prompt_toolkit for terminal interface
+- OpenRouter API integration for AI features
+- Cross-platform package management
+- Local configuration storage
 
-<div align="center">
-  <img src="https://mermaid.ink/img/pako:eNp1kk1vgzAMhv9K5NOmVYKVj7XVtNOkSdM0aYcddvESA9EIRCTptFL_-0IoW7utexi_fmzHiV_AqDggJHAWM9MV1YY1FdNkKiuYnkG29jQTIvvYC0NnI1ltnYW9dUdPSF2Jag2zhN_X8Gm1MiU3DXwIoyWrMUZUVUO-WL9b64gqXzAn9u5lDvF7nKSLNPb9l3g-X8RJnMz9aSz-0Nzng03aE-aU3UmhrMaqxVLBJkGlUO0Iy6X7-SGwfYQVF4XJmLEpljWWWMF7ypwRXkiLrZBV1Y1hRfC5VLIzbT3pjJQVbHJWa8FlNfwzGEzzgRpK5USFVx1nX6kx7CKOFnXLNEXlWUKO07LqJlwR7jvgGhj9dpz8ZtFfW6EuPe33J0_TCnYFfbVj3SPTsEn3lUzXcZqmmzR93qTbaBE_xUm8_LNJ6EJ_AfSXvdo?type=png" alt="Aegis Shell Architecture" width="600"/>
-</div>
-
-Aegis Shell consists of several key components:
-
-1. **Core Terminal Interface**: Built with Python and prompt_toolkit for advanced auto-completion
-2. **Command Handler**: Detects, parses, and routes commands appropriately 
-3. **LLM AI Integration**: Connects to OpenRouter API for AI assistance on unknown commands
-4. **Package Manager Integrations**: Interfaces with various package managers across platforms
-5. **Configuration System**: Manages user preferences and command mappings
-
----
-
-## 📋 Command Reference
+## 📋 Available Commands
 
 | Command | Description |
 |---------|-------------|
-| `faq` | Show frequently asked questions and help |
-| `exit` | Exit the Aegis Shell |
-| `any command` | Execute the command if available |
-| `unknown command` | If not found, Aegis will offer to install or use AI to assist |
-
----
-
-## 🏆 Advanced Features
-
-### Custom Command Mappings
-
-Aegis Shell automatically maintains a database of commands in `config/commands_mapping.json`. This file maps commands to their installation methods and can be extended with custom entries.
-
-```json
-{
-  "flask": {
-    "language": "python",
-    "install_cmd": "pip install flask"
-  }
-}
-```
-
-### Cross-Platform Intelligence
-
-When you try to use a Linux command on Windows (or vice versa), Aegis Shell automatically suggests the appropriate alternative:
-
-```
-$ aegis-shell apt install python3
-[Aegis] 'apt' is a Linux package manager and isn't available on Windows.
-[Aegis] On Windows, you can use alternatives like:
-1. winget - Windows Package Manager
-2. chocolatey - A package manager for Windows
-[Aegis] Would you like to install one of these? (1/2/N):
-```
-
----
+| `faq` | Show help and FAQ |
+| `exit` | Exit Aegis Shell |
+| `any command` | Execute if available |
+| `unknown command` | Triggers AI assistance |
 
 ## 🤝 Contributing
 
-We welcome contributions to Aegis Shell! Here's how you can help:
+Contributions are welcome! Here's how:
 
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Commit your changes**: `git commit -m 'Add some amazing feature'`
-4. **Push to the branch**: `git push origin feature/amazing-feature`
-5. **Open a Pull Request**
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
-### Development Setup
-
-```bash
-# Clone your fork
-git clone https://github.com/yourusername/aegis-shell.git
-cd aegis-shell
-
-# Set up virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dev dependencies
-pip install -r requirements-dev.txt
-
-# Run the application in development mode
-python aegis_shell.py
-```
-
----
-
-## 📜 License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
+## 🔗 Links
 
-## 🙏 Acknowledgements
-
-- Built with [prompt_toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit) for advanced terminal features
-- AI capabilities powered by [OpenRouter](https://openrouter.ai)
-- Package management inspired by various package managers' best practices
-- Special thanks to all our contributors and early testers
+- [Report Bug](https://github.com/tanishpoddar/aegis-shell/issues)
+- [Request Feature](https://github.com/tanishpoddar/aegis-shell/issues)
+- [Documentation](https://github.com/tanishpoddar/aegis-shell/wiki)
 
 ---
 
 <div align="center">
-  <p>
-    <a href="https://github.com/username/aegis-shell/issues">Report Bug</a> •
-    <a href="https://github.com/username/aegis-shell/issues">Request Feature</a> •
-    <a href="https://github.com/username/aegis-shell/wiki">Documentation</a>
-  </p>
   <p>🛡️ <b>Aegis Shell</b> - Empowering developers, one command at a time 🛡️</p>
+  <p>Last Updated: 2025-04-08</p>
 </div>
+```
