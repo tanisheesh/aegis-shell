@@ -101,5 +101,13 @@
             "windows": "winget install apt-tools",
             "linux": "This is typically pre-installed on Debian/Ubuntu systems"
         }
+    },
+    "faq": {
+        "language": "internal",
+        "description": "Show frequently asked questions"
+    },
+    "pipreq": {
+        "language": "python",
+        "install_cmd": "pip install pipreqs"
     }
 }

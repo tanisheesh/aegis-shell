@@ -6,8 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from commands.command_handler import handle_command
 from config_loader import load_command_mappings, load_config
 from utils.permissions import check_admin_rights
-from colorama import Fore, Style, init
-init(convert=True)
+# Remove colorama imports
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.styles import Style as PromptStyle
@@ -17,9 +16,7 @@ try:
     from commands.faq import show_faq
 except ImportError:
     def show_faq():
-        print(Fore.RED + "FAQ module not found!")
-
-init(autoreset=True)
+        print("FAQ module not found!")
 
 def display_ascii_art():
     """Display ASCII art from the resource file"""
@@ -28,11 +25,11 @@ def display_ascii_art():
         if os.path.exists(art_path):
             with open(art_path, "r") as f:
                 art = f.read()
-            print(Fore.CYAN + art + Style.RESET_ALL)
+            print(art)
         else:
-            print(Fore.RED + "ASCII art file not found at:", art_path)
+            print("ASCII art file not found at:", art_path)
     except Exception as e:
-        print(Fore.RED + f"Error displaying ASCII art: {e}")
+        print(f"Error displaying ASCII art: {e}")
 
 def main():
     os.system("cls" if os.name == "nt" else "clear")
@@ -40,9 +37,9 @@ def main():
     # Display ASCII art
     display_ascii_art()
     
-    print(Fore.CYAN + Style.BRIGHT + "Welcome to the ultimate AI-powered terminal shell.")
-    print(Fore.MAGENTA + "Made with ❤️  by Tanish, Nidhi & Nishant")
-    print(Fore.YELLOW + "Type 'exit' to quit. Type 'faq' for help.\n")
+    print("Welcome to the ultimate AI-powered terminal shell.")
+    print("Made with ❤️  by Tanish, Nidhi & Nishant")
+    print("Type 'exit' to quit. Type 'faq' for help.\n")
 
     try:
         mappings = load_command_mappings()
@@ -63,13 +60,11 @@ def main():
     # Setup advanced autocomplete using prompt_toolkit
     command_completer = WordCompleter(list(mappings.keys()), ignore_case=True)
     
-    # Custom prompt style
-    prompt_style = PromptStyle.from_dict({
-        'prompt': 'ansicyan bold',
-    })
+    # Create a simple style without colors
+    prompt_style = PromptStyle.from_dict({})
     
     session = PromptSession(
-        message=lambda: Fore.CYAN + Style.BRIGHT + "$ aegis-shell " + Style.RESET_ALL,
+        message="$ aegis-shell ",  # Plain text prompt without styling
         completer=command_completer,
         style=prompt_style
     )
@@ -78,7 +73,7 @@ def main():
         try:
             cmd = session.prompt().strip()
             if cmd.lower() == "exit":
-                print(Fore.CYAN + "[Aegis] Goodbye, warrior! 🛡️")
+                print("[Aegis] Goodbye, warrior! 🛡️")
                 break
             if cmd == "":
                 continue
@@ -94,9 +89,9 @@ def main():
         except EOFError:
             break
         except Exception as e:
-            print(Fore.RED + f"[Aegis] Error: {e}")
+            print(f"[Aegis] Error: {e}")
 
 if __name__ == "__main__":
     if not check_admin_rights():
-        print(Fore.RED + "[Aegis] Warning: Admin rights not detected. Some operations may fail.")
+        print("[Aegis] Warning: Admin rights not detected. Some operations may fail.")
     main()
