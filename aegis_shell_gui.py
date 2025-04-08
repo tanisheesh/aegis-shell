@@ -71,6 +71,12 @@ class AegisShellGUI(tk.Tk):
         self.geometry("900x600")
         self.minsize(800, 500)
         
+        # Apply dark theme
+        self.configure(bg='#121212')
+        self.style = ttk.Style()
+        self.style.theme_use('clam')
+        self.apply_dark_theme()
+        
         # Load configurations
         self.load_configs()
         
@@ -82,9 +88,31 @@ class AegisShellGUI(tk.Tk):
         sys.stdout = self.redirector
         sys.stderr = self.redirector
         
+        # Initialize prompt mode flag (to handle y/n inputs correctly)
+        self.in_prompt_mode = False
+        self.current_prompt_handler = None
+        
         # Welcome message
         self.show_welcome()
         
+    def apply_dark_theme(self):
+        """Apply dark theme to the entire UI"""
+        # Configure colors
+        bg_color = '#121212'
+        fg_color = '#ffffff'
+        accent_color = '#1e88e5'
+        secondary_bg = '#1e1e1e'
+        
+        # Configure ttk styles
+        self.style.configure('TFrame', background=bg_color)
+        self.style.configure('TLabel', background=bg_color, foreground=fg_color)
+        self.style.configure('TButton', background=secondary_bg, foreground=fg_color)
+        self.style.configure('TEntry', fieldbackground=secondary_bg, foreground=fg_color)
+        
+        # Configure scrollbar colors
+        self.style.configure('TScrollbar', background=secondary_bg, troughcolor=bg_color, 
+                            arrowcolor=fg_color, bordercolor=secondary_bg)
+    
     def load_configs(self):
         """Load configurations and command mappings"""
         try:
@@ -105,30 +133,24 @@ class AegisShellGUI(tk.Tk):
     
     def setup_ui(self):
         """Set up the user interface"""
-        # Create frame for toolbar
+        # Create frame for toolbar with minimal options (dark mode)
         toolbar_frame = ttk.Frame(self)
         toolbar_frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
         
-        # Create common buttons
+        # Create only essential buttons (removed Python, npm, Git)
         ttk.Button(toolbar_frame, text="📋 FAQ", command=self.show_faq).pack(side=tk.LEFT, padx=2)
         ttk.Button(toolbar_frame, text="🧹 Clear", command=self.clear_terminal).pack(side=tk.LEFT, padx=2)
         ttk.Button(toolbar_frame, text="⚙️ Settings", command=self.show_settings).pack(side=tk.LEFT, padx=2)
-        
-        # Package management buttons
-        ttk.Separator(toolbar_frame, orient=tk.VERTICAL).pack(side=tk.LEFT, padx=5, fill=tk.Y)
-        ttk.Button(toolbar_frame, text="🐍 Python", command=lambda: self.run_command("python --version")).pack(side=tk.LEFT, padx=2)
-        ttk.Button(toolbar_frame, text="📦 npm", command=lambda: self.run_command("npm --version")).pack(side=tk.LEFT, padx=2)
-        ttk.Button(toolbar_frame, text="🔧 Git", command=lambda: self.run_command("git --version")).pack(side=tk.LEFT, padx=2)
         
         # Main terminal area
         terminal_frame = ttk.Frame(self)
         terminal_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
-        # Terminal output area
+        # Terminal output area with larger font and dark colors
         self.terminal = scrolledtext.ScrolledText(terminal_frame, wrap=tk.WORD, 
-                                               bg='black', fg='white',
-                                               insertbackground='white',
-                                               font=('Consolas', 10))
+                                               bg='#121212', fg='#ffffff',
+                                               insertbackground='#ffffff',
+                                               font=('Consolas', 12))  # Increased font size
         self.terminal.pack(fill=tk.BOTH, expand=True)
         self.terminal.configure(state=tk.DISABLED)
         
@@ -139,18 +161,30 @@ class AegisShellGUI(tk.Tk):
         prompt_label = ttk.Label(entry_frame, text="$ aegis-shell")
         prompt_label.pack(side=tk.LEFT)
         
-        self.command_entry = ttk.Entry(entry_frame)
+        self.command_entry = ttk.Entry(entry_frame, font=('Consolas', 12))  # Increased font size
         self.command_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         self.command_entry.bind("<Return>", self.on_command_enter)
         self.command_entry.focus_set()
         
+        # Special buttons for yes/no prompts (initially hidden)
+        self.prompt_frame = ttk.Frame(entry_frame)
+        self.prompt_frame.pack(side=tk.RIGHT)
+        self.prompt_frame.pack_forget()  # Hide initially
+        
+        self.yes_button = ttk.Button(self.prompt_frame, text="Yes", command=lambda: self.handle_prompt_response('y'))
+        self.yes_button.pack(side=tk.LEFT, padx=2)
+        
+        self.no_button = ttk.Button(self.prompt_frame, text="No", command=lambda: self.handle_prompt_response('n'))
+        self.no_button.pack(side=tk.LEFT, padx=2)
+        
+        # Run button with dark styling
         run_button = ttk.Button(entry_frame, text="Run", command=self.on_run_button)
         run_button.pack(side=tk.RIGHT)
         
         # Set up auto-completion
         self.setup_autocomplete()
         
-        # Status bar
+        # Status bar with dark styling
         self.status_var = tk.StringVar()
         self.status_var.set("Ready")
         status_bar = ttk.Label(self, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
@@ -208,13 +242,47 @@ class AegisShellGUI(tk.Tk):
         self.terminal.configure(state=tk.DISABLED)
     
     def on_command_enter(self, event=None):
-        """Handle command entry"""
+        """Handle command entry - check for prompt mode first"""
         command = self.command_entry.get().strip()
         if not command:
             return
-            
+        
         self.command_entry.delete(0, tk.END)
-        self.run_command(command)
+        
+        # If we're in prompt mode, don't interpret as a command
+        if self.in_prompt_mode:
+            self.handle_prompt_response(command)
+        else:
+            self.run_command(command)
+    
+    def handle_prompt_response(self, response):
+        """Handle a response to a y/n prompt"""
+        # Log the response in the terminal
+        self.terminal.configure(state=tk.NORMAL)
+        self.terminal.insert(tk.END, f"{response}\n")
+        self.terminal.configure(state=tk.DISABLED)
+        self.terminal.see(tk.END)
+        
+        # Exit prompt mode
+        self.exit_prompt_mode()
+        
+        # Pass the response to stdin
+        if self.current_prompt_handler:
+            self.current_prompt_handler(response)
+            self.current_prompt_handler = None
+    
+    def enter_prompt_mode(self, callback=None):
+        """Enter prompt mode (waiting for y/n)"""
+        self.in_prompt_mode = True
+        self.current_prompt_handler = callback
+        self.prompt_frame.pack(side=tk.RIGHT)
+        self.command_entry.delete(0, tk.END)
+        self.command_entry.focus_set()
+    
+    def exit_prompt_mode(self):
+        """Exit prompt mode"""
+        self.in_prompt_mode = False
+        self.prompt_frame.pack_forget()
     
     def on_run_button(self):
         """Handle Run button click"""
@@ -249,13 +317,47 @@ class AegisShellGUI(tk.Tk):
         """Execute command in background thread"""
         try:
             self.status_var.set(f"Executing: {command}")
+            
+            # Override stdin to capture y/n responses
+            orig_stdin = sys.stdin
+            
+            # Create a custom stdin that will wait for responses
+            class CustomStdin:
+                def __init__(self, gui):
+                    self.gui = gui
+                    self.response_queue = queue.Queue()
+                
+                def readline(self):
+                    # Show prompt UI
+                    self.gui.after(0, lambda: self.gui.enter_prompt_mode(
+                        lambda response: self.response_queue.put(response + '\n')
+                    ))
+                    
+                    # Wait for response
+                    response = self.response_queue.get()
+                    return response
+            
+            # Override stdin
+            sys.stdin = CustomStdin(self)
+            
+            # Execute command
             handle_command(command, self.mappings, self.config)
+            
+            # Restore stdin
+            sys.stdin = orig_stdin
+            
+            # Make sure we exit prompt mode
+            self.after(0, self.exit_prompt_mode)
+            
             self.status_var.set("Ready")
         except Exception as e:
             self.terminal.configure(state=tk.NORMAL)
             self.terminal.insert(tk.END, f"[Aegis] Error: {e}\n", "error")
             self.terminal.configure(state=tk.DISABLED)
             self.status_var.set("Error occurred")
+            
+            # Make sure we exit prompt mode
+            self.after(0, self.exit_prompt_mode)
     
     def show_faq(self):
         """Show the FAQ content"""
@@ -281,6 +383,9 @@ class AegisShellGUI(tk.Tk):
         settings_window.transient(self)
         settings_window.grab_set()
         
+        # Apply dark theme to settings window
+        settings_window.configure(bg='#121212')
+        
         notebook = ttk.Notebook(settings_window)
         notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
@@ -294,7 +399,23 @@ class AegisShellGUI(tk.Tk):
                                   values=["python", "javascript", "system"])
         lang_combo.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
         
-        ttk.Button(general_tab, text="Save", command=lambda: self.save_settings({"default_language": lang_var.get()})).grid(
+        # Font size setting
+        ttk.Label(general_tab, text="Terminal Font Size:").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+        font_size_var = tk.StringVar(value="12")
+        font_size_combo = ttk.Combobox(general_tab, textvariable=font_size_var, 
+                                       values=["10", "11", "12", "14", "16", "18"])
+        font_size_combo.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
+        
+        # Apply font size button
+        ttk.Button(general_tab, text="Apply Font Size", 
+                   command=lambda: self.apply_font_size(int(font_size_var.get()))).grid(
+            row=1, column=2, padx=5, pady=5)
+        
+        ttk.Button(general_tab, text="Save", 
+                   command=lambda: self.save_settings({
+                       "default_language": lang_var.get(),
+                       "font_size": font_size_var.get()
+                   })).grid(
             row=10, column=0, columnspan=2, pady=20)
         
         # Commands tab
@@ -307,7 +428,7 @@ class AegisShellGUI(tk.Tk):
         cmd_frame = ttk.Frame(commands_tab)
         cmd_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
-        # Create treeview
+        # Create treeview with dark theme
         columns = ("Command", "Language", "Install Method")
         cmd_tree = ttk.Treeview(cmd_frame, columns=columns, show="headings")
         
@@ -328,6 +449,11 @@ class AegisShellGUI(tk.Tk):
             install_cmd = details.get("install_cmd", "N/A")
             cmd_tree.insert("", tk.END, values=(command, language, install_cmd))
     
+    def apply_font_size(self, size):
+        """Change the terminal font size"""
+        self.terminal.configure(font=('Consolas', size))
+        self.command_entry.configure(font=('Consolas', size))
+    
     def save_settings(self, settings):
         """Save settings to config file"""
         # Update config
@@ -338,6 +464,13 @@ class AegisShellGUI(tk.Tk):
             with open(CONFIG_DIR / "config.json", "w") as f:
                 json.dump(self.config, f, indent=4)
             messagebox.showinfo("Settings", "Settings saved successfully!")
+            
+            # Apply font size if it was changed
+            if "font_size" in settings:
+                try:
+                    self.apply_font_size(int(settings["font_size"]))
+                except:
+                    pass
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save settings: {e}")
     

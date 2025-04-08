@@ -109,5 +109,9 @@
     "pipreq": {
         "language": "python",
         "install_cmd": "pip install pipreqs"
+    },
+    "opencv": {
+        "language": "python",
+        "install_cmd": "pip install opencv-python"
     }
 }

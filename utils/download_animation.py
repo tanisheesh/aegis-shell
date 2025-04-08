@@ -10,7 +10,7 @@ class DownloadAnimator:
         self.is_running = False
         self.progress = 0
         self.thread = None
-        self.speed = 0.05  # Controls animation speed
+        self.speed = 0.1  # Controls animation speed
         self.completed = False
         
     def update_progress(self, amount=1):
@@ -25,12 +25,12 @@ class DownloadAnimator:
             # Clear the current line
             sys.stdout.write('\r')
             
-            # Calculate bar segments
-            bar_width = 40
+            # Calculate bar segments - simple line progress bar
+            bar_width = 30
             filled_length = int(bar_width * self.progress / 100)
             bar = '█' * filled_length + '░' * (bar_width - filled_length)
             
-            # Format the progress message
+            # Format the progress message - single line only
             message = f"{Fore.CYAN}[Aegis] Installing {self.package_name} via {self.installer} {Fore.GREEN}[{bar}] {self.progress}%"
             
             # Print the progress bar
@@ -39,7 +39,7 @@ class DownloadAnimator:
             
             # Simulate random progress
             if not self.completed:
-                self.update_progress(0.5 + (time.time() % 2))
+                self.update_progress(1 + (time.time() % 3))
             
             time.sleep(self.speed)
         
