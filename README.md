@@ -4,7 +4,7 @@
   
 ![Version](https://img.shields.io/badge/version-1.0.0-brightgreen)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
-![License](https://img.shields.io/badge/license-MIT-orange)
+![License](https://img.shields.io/badge/license-GPL-orange)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 
 </div>
@@ -48,49 +48,29 @@ Aegis Shell is your intelligent terminal companion that streamlines development 
 
 ## 🖥️ Installation
 
-<div align="center">
-<img src="https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Windows" />
-<img src="https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS" />
-<img src="https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Linux" />
-</div>
+### For Users
+Visit our [Releases](https://github.com/username/aegis-shell/releases) page to download the latest version for your operating system:
 
-### Windows
+- **Windows**: Download `AegisShell-Windows.zip`
+- **macOS**: Download `AegisShell-Mac.zip`
 
-```powershell
-# Option 1: Run the installer
-AegisShell_Setup.exe
-
-# Option 2: Extract the zip and run
-Extract AegisShell.zip to any location
-Run AegisShell.exe
-```
-
-### macOS / Linux
-
-```bash
-# Extract the zip
-unzip AegisShell.zip -d /preferred/location
-
-# Run the executable
-cd /preferred/location/AegisShell
-./AegisShell
-```
-
-### Building from Source
+### For Developers
 
 ```bash
 # Clone the repository
 git clone https://github.com/username/aegis-shell.git
 cd aegis-shell
 
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the setup script
-python setup.py
+# Run the application
+python aegis_shell.py
 ```
-
----
 
 ## 🚀 Getting Started
 
@@ -197,7 +177,7 @@ python aegis_shell.py
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU GENERAL PUBLIC LICENSE - see the [LICENSE](LICENSE) file for details.
 
 ---
 
