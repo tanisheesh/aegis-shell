@@ -181,20 +181,11 @@ This project is licensed under the GNU GENERAL PUBLIC LICENSE - see the [LICENSE
 
 ---
 
-## 🙏 Acknowledgements
-
-- Built with [prompt_toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit) for advanced terminal features
-- AI capabilities powered by [OpenRouter](https://openrouter.ai)
-- Package management inspired by various package managers' best practices
-- Special thanks to all our contributors and early testers
-
----
-
 <div align="center">
   <p>
-    <a href="https://github.com/username/aegis-shell/issues">Report Bug</a> •
-    <a href="https://github.com/username/aegis-shell/issues">Request Feature</a> •
-    <a href="https://github.com/username/aegis-shell/wiki">Documentation</a>
+    <a href="https://github.com/tanishpoddar/aegis-shell/issues">Report Bug</a> •
+    <a href="https://github.com/tanishpoddar/aegis-shell/issues">Request Feature</a> •
+    <a href="https://github.com/tanishpoddar/aegis-shell/wiki">Documentation</a>
   </p>
   <p>🛡️ <b>Aegis Shell</b> - Empowering developers, one command at a time 🛡️</p>
 </div>
