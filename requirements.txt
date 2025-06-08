@@ -1,0 +1,9 @@
+colorama==0.4.6
+prompt-toolkit==3.0.39
+psutil==5.9.5
+watchdog==3.0.0
+requests==2.31.0
+typing-extensions>=4.12.2
+cryptography==41.0.7
+pywin32==306; platform_system == "Windows"
+winshell==0.6 

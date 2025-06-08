@@ -71,39 +71,58 @@
 
 ### Windows
 
-```powershell
-# Option 1: Run the installer
-AegisShell_Setup.exe
+1. Download the latest installer from the [Releases](https://github.com/tanishpoddar/aegis-shell/releases) page
+2. Run the installer and follow the on-screen instructions
+3. The installer will:
+   - Install required dependencies
+   - Copy files to the installation directory
+   - Add Aegis Shell to your system PATH
+   - Create desktop and start menu shortcuts
+   - Guide you through first-time setup
 
-# Option 2: Extract the zip and run
-Extract AegisShell.zip to any location
-Run AegisShell.exe
-```
+### Mac
 
-### macOS / Linux
-
-```bash
-# Extract the zip
-unzip AegisShell.zip -d /preferred/location
-
-# Run the executable
-cd /preferred/location/AegisShell
-./AegisShell
-```
+1. Download the latest Mac package from the [Releases](https://github.com/tanishpoddar/aegis-shell/releases) page
+2. Extract the zip file
+3. Run the AegisShell executable
+4. Follow the first-time setup instructions
 
 ### Building from Source
 
-```bash
-# Clone the repository
-git clone https://github.com/username/aegis-shell.git
-cd aegis-shell
+### Windows Build
 
-# Install dependencies
-pip install -r requirements.txt
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/tanishpoddar/aegis-shell.git
+   cd aegis-shell
+   ```
 
-# Run the setup script
-python setup.py
-```
+2. Run the build script:
+   ```bash
+   python setup.py
+   ```
+
+3. The Windows installer will be created as `AegisShell-Windows.zip` in the root directory
+
+### Mac Build
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/tanishpoddar/aegis-shell.git
+   cd aegis-shell
+   ```
+
+2. Make the build script executable:
+   ```bash
+   chmod +x build_mac.sh
+   ```
+
+3. Run the build script:
+   ```bash
+   ./build_mac.sh
+   ```
+
+4. The Mac package will be created as `AegisShell-Mac.zip` in the root directory
 
 ---
 
@@ -111,12 +130,12 @@ python setup.py
 
 ### First-Time Setup
 
-1. Launch Aegis Shell from your installation location
-2. You'll see the welcome ASCII art and introduction
-3. When you first use an AI feature, you'll be prompted to set up your API key:
-   - Go to [OpenRouter Keys](https://openrouter.ai/keys)
-   - Create a free account and generate an API key
-   - Copy and paste the key when prompted
+When you first run Aegis Shell, you'll be prompted to:
+
+1. Select an OpenRouter model
+2. Enter your OpenRouter API key
+
+Your API key will be securely stored and encrypted on your system.
 
 ### Using Aegis Shell
 
@@ -186,72 +205,3 @@ Aegis Shell automatically maintains a database of commands in `config/commands_m
   }
 }
 ```
-
-### Cross-Platform Intelligence
-
-When you try to use a Linux command on Windows (or vice versa), Aegis Shell automatically suggests the appropriate alternative:
-
-```
-$ aegis-shell apt install python3
-[Aegis] 'apt' is a Linux package manager and isn't available on Windows.
-[Aegis] On Windows, you can use alternatives like:
-1. winget - Windows Package Manager
-2. chocolatey - A package manager for Windows
-[Aegis] Would you like to install one of these? (1/2/N):
-```
-
----
-
-## 🤝 Contributing
-
-We welcome contributions to Aegis Shell! Here's how you can help:
-
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Commit your changes**: `git commit -m 'Add some amazing feature'`
-4. **Push to the branch**: `git push origin feature/amazing-feature`
-5. **Open a Pull Request**
-
-### Development Setup
-
-```bash
-# Clone your fork
-git clone https://github.com/yourusername/aegis-shell.git
-cd aegis-shell
-
-# Set up virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dev dependencies
-pip install -r requirements-dev.txt
-
-# Run the application in development mode
-python aegis_shell.py
-```
-
----
-
-## 📜 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgements
-
-- Built with [prompt_toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit) for advanced terminal features
-- AI capabilities powered by [OpenRouter](https://openrouter.ai)
-- Package management inspired by various package managers' best practices
-- Special thanks to all our contributors and early testers
-
----
-
-<div align="center">
-  <p>
-    <a href="https://github.com/username/aegis-shell/issues">Report Bug</a> •
-    <a href="https://github.com/username/aegis-shell/issues">Request Feature</a> •
-    <a href="https://github.com/username/aegis-shell/wiki">Documentation</a>
-  </p>
-  <p>🛡️ <b>Aegis Shell</b> - Empowering developers, one command at a time 🛡️</p>
-</div>
