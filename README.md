@@ -188,4 +188,5 @@ This project is licensed under the GNU GENERAL PUBLIC LICENSE - see the [LICENSE
     <a href="https://github.com/tanisheesh/aegis-shell/wiki">Documentation</a>
   </p>
   <p>🛡️ <b>Aegis Shell</b> - Empowering developers, one command at a time 🛡️</p>
+  <p>Made with ❤️ by <a href="https://github.com/tanishpoddar">Tanish Poddar</a>, <a href="https://github.com/nidhi-nayana">Nidhi Nayana</a> & <a href="https://github.com/nishant-codess">Nishant Ranjan</a></p>
 </div>
