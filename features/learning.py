@@ -147,7 +147,7 @@ TIPS = [
     ('explain',              'Type `explain <any command>` to get an AI breakdown before running it.'),
     ('plan',                 'Type `plan set up a React project` and Aegis will plan and run all steps.'),
     ('$VAR = value',         'Set session variables with `$VAR = value` — they expand in subsequent commands.'),
-    ('gst shortcut',         '`gst` = `git status`, `gp` = `git push`, `glog` = pretty git log.'),
+    ('git status',           'Use `git status`, `git log --oneline`, `git diff --staged` to inspect repo state.'),
     ('secret set',           'Store API keys safely: `secret set OPENAI_KEY sk-...` — stored encrypted.'),
     ('ports',                '`ports` shows every listening port and which process owns it.'),
     ('macro record',         'Record a sequence of commands as a macro and replay it with one command.'),

@@ -60,10 +60,16 @@ class CommandExecutor:
             return False, str(e)
 
         stop = threading.Event()
+        stderr_lines: list = []
 
         def _stream_stdout():
             for line in process.stdout:
                 print(line, end='', flush=True)
+
+        def _stream_stderr():
+            for line in process.stderr:
+                stderr_lines.append(line)
+                print(Fore.RED + line + Style.RESET_ALL, end='', flush=True)
 
         def _escape_watcher():
             """Watch for Escape keypress alongside a running subprocess."""
@@ -103,9 +109,11 @@ class CommandExecutor:
             except Exception:
                 pass
 
-        reader = threading.Thread(target=_stream_stdout, daemon=True)
+        reader  = threading.Thread(target=_stream_stdout, daemon=True)
+        err_reader = threading.Thread(target=_stream_stderr, daemon=True)
         watcher = threading.Thread(target=_escape_watcher, daemon=True)
         reader.start()
+        err_reader.start()
         watcher.start()
 
         # Poll reader.join with a short timeout so the main thread stays
@@ -134,7 +142,8 @@ class CommandExecutor:
             return False, ''
 
         process.wait()
-        stderr_out = process.stderr.read()
+        err_reader.join()
+        stderr_out = ''.join(stderr_lines)
 
         if process.returncode == 0:
             self.success_count += 1
@@ -144,15 +153,17 @@ class CommandExecutor:
             'is not recognized', 'not found', 'cannot find',
             'no such file', 'command not found'
         )
-        if any(h in stderr_out.lower() for h in not_found_hints):
+        # Only auto-install when the binary itself could be missing (direct/unknown dialects).
+        # For cmd/powershell/unix_on_windows the wrapper always exists — a "not found" in stderr
+        # means a bad flag or missing sub-tool, not a missing binary.
+        if dialect in ('direct', 'unknown') and any(h in stderr_out.lower() for h in not_found_hints):
             base = get_base(command)
             if not is_available(base):
                 installed = self._auto_install(base)
                 if installed:
                     return self._run(command, dialect)
 
-        if stderr_out:
-            print(Fore.RED + stderr_out + Style.RESET_ALL, end='')
+        # stderr already printed live by _stream_stderr thread
         return False, stderr_out
 
     def _auto_install(self, base_command: str) -> bool:

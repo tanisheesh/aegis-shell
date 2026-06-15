@@ -62,12 +62,80 @@ def explain_command(command: str) -> Optional[str]:
 
 # ── Error Diagnosis ───────────────────────────────────────────────────────────
 
+def _subcmds(command: str) -> List[str]:
+    """Split a compound command (;  &&  ||) into individual sub-commands."""
+    return [p.strip() for p in re.split(r';|&&|\|\|', command) if p.strip()]
+
+
+def _gather_system_context(command: str, stderr: str) -> str:
+    """Query the live system for context relevant to the failed command."""
+    ctx: List[str] = []
+
+    for sub in _subcmds(command):
+        parts = sub.split()
+        if not parts:
+            continue
+        base = parts[0].lower()
+
+        # net start/stop/query <name> → look up real service names
+        if base == 'net' and len(parts) >= 3 and parts[1].lower() in ('start', 'stop', 'query'):
+            # Strip any trailing punctuation the compound-split may have left
+            hint = re.sub(r'\W+$', '', parts[2])
+            if not hint:
+                continue
+            try:
+                r = subprocess.run(
+                    ['powershell', '-NoProfile', '-Command',
+                     f"Get-Service *{hint}* | Select-Object Name,DisplayName,Status | Format-Table -AutoSize"],
+                    capture_output=True, text=True, timeout=5,
+                )
+                if r.stdout.strip():
+                    ctx.append(f"Services matching '{hint}' on this system:\n{r.stdout.strip()}")
+            except Exception:
+                pass
+
+        # pip/python failures → include version
+        if base in ('pip', 'pip3', 'python', 'python3'):
+            try:
+                r = subprocess.run([base, '--version'], capture_output=True, text=True, timeout=5)
+                if r.stdout.strip():
+                    ctx.append(r.stdout.strip())
+            except Exception:
+                pass
+
+    # Port already in use → show what owns it
+    port_match = re.search(r'\b(\d{2,5})\b', stderr + ' ' + command)
+    if port_match and any(w in (stderr + command).lower() for w in ('port', 'address already', 'bind')):
+        port = port_match.group(1)
+        try:
+            r = subprocess.run(
+                ['powershell', '-NoProfile', '-Command',
+                 f"Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue"
+                 " | Select-Object State,OwningProcess | Format-Table -AutoSize"],
+                capture_output=True, text=True, timeout=5,
+            )
+            if r.stdout.strip():
+                ctx.append(f"Port {port} usage:\n{r.stdout.strip()}")
+        except Exception:
+            pass
+
+    return '\n'.join(ctx)
+
+
 def diagnose_error(command: str, stderr: str, returncode: int) -> Optional[str]:
     os_name = platform.system()
+    shell_hint = (
+        " Write FIX commands for Windows PowerShell 5.1: use ';' not '&&' to chain commands."
+        if os_name == 'Windows' else ""
+    )
+
+    sys_ctx = _gather_system_context(command, stderr)
+    ctx_section = f"\nSystem context:\n{sys_ctx}" if sys_ctx else ""
+
     return _call_groq(
-        f"You are a shell expert on {os_name}. A command failed. Give a short diagnosis and "
+        f"You are a shell expert on {os_name}.{shell_hint} A command failed. Give a short diagnosis and "
         "the exact fix command(s) on the next line prefixed with FIX: — nothing else.",
-        f"Command: {command}\nExit code: {returncode}\nError output:\n{stderr[:800]}",
+        f"Command: {command}\nExit code: {returncode}\nError output:\n{stderr[:800]}{ctx_section}",
         max_tokens=200,
     )
 

@@ -89,51 +89,5 @@ def paste_from_clipboard() -> Optional[str]:
         return None
 
 
-# ── GitHub CLI wrapper ────────────────────────────────────────────────────────
-
-GH_ALIASES = {
-    'prs':    'gh pr list',
-    'issues': 'gh issue list',
-    'prview': 'gh pr view',
-    'prmerge':'gh pr merge',
-    'ghrepo': 'gh repo view --web',
-}
-
-
-def expand_gh_alias(cmd: str) -> Optional[str]:
-    parts = cmd.split(None, 1)
-    if parts and parts[0] in GH_ALIASES:
-        base = GH_ALIASES[parts[0]]
-        rest = parts[1] if len(parts) > 1 else ''
-        return f'{base} {rest}'.strip()
-    return None
-
-
-# ── Cloud shortcuts ───────────────────────────────────────────────────────────
-
-CLOUD_ALIASES = {
-    'aws-whoami':   'aws sts get-caller-identity',
-    'gcp-project':  'gcloud config get-value project',
-    'az-sub':       'az account show --query name -o tsv',
-    'k8s-ctx':      'kubectl config current-context',
-    'k8s-pods':     'kubectl get pods --all-namespaces',
-}
-
-
-def expand_cloud_alias(cmd: str) -> Optional[str]:
-    parts = cmd.split(None, 1)
-    if parts and parts[0] in CLOUD_ALIASES:
-        base = CLOUD_ALIASES[parts[0]]
-        rest = parts[1] if len(parts) > 1 else ''
-        return f'{base} {rest}'.strip()
-    return None
-
-
 def expand_all_aliases(cmd: str) -> Optional[str]:
-    from features.dev_workflow import expand_docker_alias, expand_git_alias
-    return (
-        expand_git_alias(cmd)
-        or expand_docker_alias(cmd)
-        or expand_gh_alias(cmd)
-        or expand_cloud_alias(cmd)
-    )
+    return None

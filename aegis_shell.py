@@ -40,7 +40,6 @@ from features.dev_workflow import (
     load_dotenv, detect_venv, activate_venv,
     list_ports, kill_port, detect_and_run_tests, create_project,
     ssh_add, ssh_connect, ssh_list, TEMPLATES,
-    GIT_ALIASES, DOCKER_ALIASES,
 )
 from features.macros import MacroRecorder, run_macro, list_macros, delete_macro
 from features.hooks import register as hook_register, fire as hook_fire
@@ -50,7 +49,7 @@ from features.credential_manager import (
 )
 from features.integrations import (
     is_http_command, run_http_command, copy_to_clipboard, expand_all_aliases,
-    GH_ALIASES, CLOUD_ALIASES, paste_from_clipboard,
+    paste_from_clipboard,
 )
 from config_loader import load_command_mappings
 from features.analytics import record as analytics_record, show_analytics
@@ -233,10 +232,6 @@ class AegisShell:
     def _build_completer(self):
         known = (
             list(load_command_mappings().keys())
-            + list(GIT_ALIASES.keys())
-            + list(DOCKER_ALIASES.keys())
-            + list(GH_ALIASES.keys())
-            + list(CLOUD_ALIASES.keys())
             + [
                 'help', 'docs', 'env', 'stats', 'clear', 'cls', 'exit',
                 'explain', 'plan', 'commit-msg', 'context', 'diagnose',
@@ -535,7 +530,6 @@ class AegisShell:
                     print(theme_c('success') + f'[Aegis] {args[1]}: {masked}' + Style.RESET_ALL)
                     if input(theme_c('warning') + '  Copy full value to clipboard? (y/N): ' + Style.RESET_ALL).strip().lower() == 'y':
                         copy_to_clipboard(val)
-                        print(theme_c('success') + '[Aegis] Copied to clipboard.' + Style.RESET_ALL)
                 else:
                     print(theme_c('warning') + f'[Aegis] No secret "{args[1]}".' + Style.RESET_ALL)
             elif sub == 'delete' and len(args) > 1:
@@ -688,12 +682,26 @@ class AegisShell:
             if not success:
                 hook_fire('on_error', command=cmd, error=error)
                 if error:
-                    # Auto-diagnose on failure
-                    print(theme_c('error') + error + Style.RESET_ALL, end='')
-                    print(theme_c('info') + '\n[Aegis] Diagnosing...' + Style.RESET_ALL)
-                    fix = diagnose_error(cmd, error, 1)
-                    if fix:
-                        print(theme_c('info') + f'[Aegis] {fix}' + Style.RESET_ALL)
+                    if error.startswith('[Aegis] Blocked:'):
+                        # Security block or user cancellation — no diagnosis needed
+                        print(theme_c('warning') + error + Style.RESET_ALL)
+                    elif error.strip():
+                        # Auto-diagnose on real failures
+                        print(theme_c('error') + error + Style.RESET_ALL, end='')
+                        print(theme_c('info') + '\n[Aegis] Diagnosing...' + Style.RESET_ALL)
+                        fix = diagnose_error(cmd, error, 1)
+                        if fix:
+                            print(theme_c('info') + f'[Aegis] {fix}' + Style.RESET_ALL)
+                            # Extract the FIX: command and offer to run it
+                            fix_cmd = None
+                            for line in fix.splitlines():
+                                if line.strip().startswith('FIX:'):
+                                    fix_cmd = line.split('FIX:', 1)[1].strip()
+                                    break
+                            if fix_cmd:
+                                ans = input(theme_c('warning') + f'  Run fix? (y/N): ' + Style.RESET_ALL).strip().lower()
+                                if ans == 'y':
+                                    self._handle(fix_cmd)
 
             hook_fire('after_command', command=cmd, success=success, duration=duration)
 

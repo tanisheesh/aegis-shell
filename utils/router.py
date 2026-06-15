@@ -122,6 +122,11 @@ def build_subprocess_args(command: str, dialect: str) -> list:
         return ['cmd', '/c', command]
 
     if dialect == 'direct':
+        # On Windows some tools ship as .cmd scripts (npm.cmd, npx.cmd, yarn.cmd, etc.)
+        if system == 'windows':
+            cmd_name = base_lower + '.cmd'
+            if shutil.which(cmd_name):
+                return [cmd_name] + parts[1:]
         return parts
 
     if dialect == 'script':
@@ -136,8 +141,11 @@ def build_subprocess_args(command: str, dialect: str) -> list:
         translated = f"{translated_base} {rest}".strip()
         return ['cmd', '/c', translated]
 
-    # Unknown: on Windows default to PowerShell (superset of CMD for most things)
+    # Unknown: on Windows default to PowerShell (superset of CMD for most things).
+    # Exception: commands that use && are CMD-style chaining — PS 5.x doesn't support &&.
     if system == 'windows':
+        if '&&' in command:
+            return ['cmd', '/c', command]
         return ['powershell', '-NoProfile', '-Command', command]
 
     # On Unix default to bash

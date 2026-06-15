@@ -53,6 +53,10 @@ def classify_and_translate(user_input: str) -> Dict:
     if not headers:
         return {"type": "command", "commands": [user_input], "explanation": ""}
 
+    chain_hint = (
+        "\n- On Windows PowerShell 5.1: use ';' not '&&' to chain commands"
+        if platform.system() == 'Windows' else ""
+    )
     payload = {
         "model": _get_model(),
         "messages": [
@@ -68,6 +72,7 @@ def classify_and_translate(user_input: str) -> Dict:
                     "- If it's natural language (e.g. 'show running processes', 'compress this folder'), type='nl', translate to real commands for the OS\n"
                     "- commands is always an array, even if one item\n"
                     "- No markdown, no explanation outside the JSON"
+                    + chain_hint
                 )
             },
             {"role": "user", "content": user_input}
