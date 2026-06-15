@@ -4,7 +4,12 @@ import platform
 import json
 from typing import Dict, List, Optional, Tuple
 from pathlib import Path
-import semver
+try:
+    import semver
+    _SEMVER_AVAILABLE = True
+except ImportError:
+    _SEMVER_AVAILABLE = False
+
 import requests
 from colorama import Fore, Style
 
@@ -196,6 +201,8 @@ class PackageManager:
         
     def _is_compatible_version(self, installed: str, required: str) -> bool:
         """Check if installed version is compatible with required version"""
+        if not _SEMVER_AVAILABLE:
+            return True  # can't compare without semver, assume compatible
         try:
             return semver.compare(installed, required) >= 0
         except ValueError:

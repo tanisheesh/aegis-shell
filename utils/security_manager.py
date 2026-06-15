@@ -3,15 +3,24 @@ import os
 import sys
 import subprocess
 from typing import Tuple, List, Set, Dict, Optional
-import winreg
 import psutil
 from pathlib import Path
 
+try:
+    import winreg as _winreg
+except ImportError:
+    _winreg = None
+
 class SecurityManager:
     def __init__(self):
+        # These prompt for confirmation rather than being silently blocked
         self.dangerous_commands: Set[str] = {
-            'format', 'del', 'rm', 'rmdir', 'rd', 'shutdown', 'taskkill',
-            'reg', 'regedit', 'netsh', 'net', 'attrib', 'cacls', 'icacls'
+            'format', 'shutdown', 'regedit',
+        }
+        # These are risky but common dev tools — warn, don't block
+        self.warn_commands: Set[str] = {
+            'del', 'rm', 'rmdir', 'rd', 'taskkill',
+            'reg', 'netsh', 'net', 'attrib', 'cacls', 'icacls',
         }
         self.safe_directories: Set[str] = set()
         self._init_safe_directories()
@@ -34,29 +43,40 @@ class SecurityManager:
                 
     def validate_command(self, command: str) -> Tuple[bool, str]:
         """
-        Validate a command for security
+        Validate a command for security.
         Returns: (is_safe, reason)
+        Dangerous commands prompt for confirmation; warn_commands allow pass-through with a note.
         """
-        # Split command into parts
         try:
             parts = command.split()
             base_command = parts[0].lower()
         except IndexError:
             return False, "Empty command"
-            
-        # Check for dangerous commands
+
+        # Hard-block truly destructive commands (format, shutdown, regedit)
         if base_command in self.dangerous_commands:
-            return False, f"Command '{base_command}' is potentially dangerous"
-            
+            from colorama import Fore, Style
+            print(Fore.RED + f'[Aegis] WARNING: "{base_command}" is destructive.' + Style.RESET_ALL)
+            print(Fore.RED + f'  Command: {command}' + Style.RESET_ALL)
+            confirm = input(Fore.YELLOW + '  Run anyway? (yes/N): ' + Style.RESET_ALL).strip()
+            if confirm.lower() != 'yes':
+                return False, f"Cancelled by user"
+            return True, "User confirmed dangerous command"
+
+        # Warn for risky-but-common commands (del, rm, taskkill, etc.)
+        if base_command in self.warn_commands:
+            from colorama import Fore, Style
+            print(Fore.YELLOW + f'[Aegis] Warning: "{base_command}" can be destructive.' + Style.RESET_ALL)
+            print(Fore.YELLOW + f'  Command: {command}' + Style.RESET_ALL)
+            confirm = input(Fore.YELLOW + '  Continue? (y/N): ' + Style.RESET_ALL).strip()
+            if confirm.lower() != 'y':
+                return False, "Cancelled by user"
+            return True, "User confirmed"
+
         # Check for system modification commands
         if self._is_system_modification_command(command):
             return False, "Command attempts to modify system settings"
-            
-        # Check for file operations
-        if self._is_file_operation_command(command):
-            if not self._is_safe_file_operation(command):
-                return False, "File operation attempted outside safe directories"
-                
+
         # Check for network operations
         if self._is_network_command(command):
             if not self._is_safe_network_operation(command):
@@ -120,8 +140,14 @@ class SecurityManager:
         
     def _is_safe_network_operation(self, command: str) -> bool:
         """Check if network operation is safe"""
-        # Add specific network operation validation logic here
-        return True
+        dangerous_net_patterns = [
+            r'net\s+share',
+            r'net\s+use\s+\*',
+            r'netsh\s+wlan\s+connect',
+            r'ipconfig\s+/release',
+            r'ipconfig\s+/renew',
+        ]
+        return not any(re.search(p, command, re.I) for p in dangerous_net_patterns)
         
     def check_permissions(self, command: str) -> Tuple[bool, str]:
         """

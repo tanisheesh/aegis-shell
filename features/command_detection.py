@@ -1,10 +1,9 @@
 import os
 import re
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional
 from pathlib import Path
 import json
 from difflib import get_close_matches
-import readline
 import glob
 
 class CommandDetector:
@@ -114,20 +113,6 @@ class CommandDetector:
         """Add new command template"""
         self.command_templates[name] = template
         self._save_templates()
-        
-    def get_command_completion(self, text: str, state: int) -> Optional[str]:
-        """Get command completion for readline"""
-        if state == 0:
-            self.completion_matches = self.get_suggestions(text)
-        try:
-            return self.completion_matches[state]
-        except IndexError:
-            return None
-            
-    def setup_completion(self):
-        """Setup readline completion"""
-        readline.set_completer(self.get_command_completion)
-        readline.parse_and_bind("tab: complete")
         
     def correct_command(self, command: str) -> str:
         """Attempt to correct command if it's close to a known command"""

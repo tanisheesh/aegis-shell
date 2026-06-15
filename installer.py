@@ -1,254 +1,249 @@
+"""
+Aegis Shell — offline installer
+Run directly:  python installer.py
+"""
 import os
 import sys
-import shutil
-import subprocess
 import json
+import shutil
 import platform
+import subprocess
 from pathlib import Path
-import winreg
-import getpass
-import base64
-from cryptography.fernet import Fernet
-import requests
 
-class AegisInstaller:
-    def __init__(self):
-        self.base_dir = Path(__file__).resolve().parent
-        self.install_dir = Path(os.environ.get('PROGRAMFILES', 'C:\\Program Files')) / 'AegisShell'
-        self.config_dir = Path.home() / '.aegis'
-        self.requirements_file = self.base_dir / 'requirements.txt'
-        self.encryption_key = None
-        
-    def setup_encryption(self):
-        """Set up encryption for API key storage"""
-        key_file = self.config_dir / '.key'
-        if not key_file.exists():
-            key = Fernet.generate_key()
-            key_file.parent.mkdir(parents=True, exist_ok=True)
-            with open(key_file, 'wb') as f:
-                f.write(key)
+try:
+    from colorama import init, Fore, Style
+    init()
+    _HAS_COLOR = True
+except ImportError:
+    _HAS_COLOR = False
+    class _Noop:
+        def __getattr__(self, _): return ''
+    Fore = Style = _Noop()
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _c(code, text):
+    return f"{code}{text}{Style.RESET_ALL}" if _HAS_COLOR else text
+
+def banner():
+    print()
+    print(_c(Fore.CYAN, "  ╔════════════════════════════════════════════════╗"))
+    print(_c(Fore.CYAN, "  ║                                                ║"))
+    print("  " + _c(Fore.CYAN, "║   ") + _c(Fore.WHITE, "⚔   A E G I S   S H E L L   ⚔") + _c(Fore.CYAN, "            ║"))
+    print(_c(Fore.CYAN, "  ║                                                ║"))
+    print(_c(Fore.CYAN, "  ║   AI-powered terminal. Run anything.           ║"))
+    print(_c(Fore.CYAN, "  ║   Tanish · Nidhi · Nishant  ·  SRMIST         ║"))
+    print(_c(Fore.CYAN, "  ║                                                ║"))
+    print(_c(Fore.CYAN, "  ╚════════════════════════════════════════════════╝"))
+    print()
+
+TOTAL = 4
+_step = 0
+
+def step(msg):
+    global _step
+    _step += 1
+    print(f"  {_c(Fore.CYAN, f'[{_step}/{TOTAL}]')}  {msg}")
+
+def ok(msg):   print(f"  {_c(Fore.GREEN, '✓')}  {msg}")
+def warn(msg): print(f"  {_c(Fore.YELLOW, '!')}  {msg}")
+def fail(msg): print(f"  {_c(Fore.RED, '✗')}  {msg}")
+
+def die(msg):
+    fail(msg)
+    print()
+    sys.exit(1)
+
+def hr():
+    print(_c(Fore.CYAN, "  ────────────────────────────────────────────────"))
+
+# ── Config ────────────────────────────────────────────────────────────────────
+
+def _default_install_dir():
+    return Path.home() / '.aegis-shell'
+
+def _default_bin_dir():
+    system = platform.system()
+    if system == 'Windows':
+        return Path.home() / '.local' / 'bin'
+    for d in [Path('/usr/local/bin'), Path.home() / '.local' / 'bin', Path.home() / 'bin']:
+        if os.access(d, os.W_OK) or not d.exists():
+            return d
+    return Path.home() / '.local' / 'bin'
+
+# ── Steps ─────────────────────────────────────────────────────────────────────
+
+def check_python():
+    print(f"  {_c(Fore.WHITE, 'Checking requirements...')}")
+    print()
+    vi = sys.version_info
+    if vi < (3, 9):
+        die(f"Python {vi.major}.{vi.minor} found — 3.9+ required. https://python.org/downloads")
+    ok(f"Python {vi.major}.{vi.minor}.{vi.micro}")
+
+
+def install_deps(source_dir: Path):
+    step("Installing dependencies...")
+    req = source_dir / 'requirements.txt'
+    if not req.exists():
+        warn("requirements.txt not found — skipping")
+        return
+    result = subprocess.run(
+        [sys.executable, '-m', 'pip', 'install', '--quiet', '--upgrade', 'pip'],
+        capture_output=True
+    )
+    result = subprocess.run(
+        [sys.executable, '-m', 'pip', 'install', '--quiet', '-r', str(req)],
+        capture_output=True
+    )
+    if result.returncode != 0:
+        die("Dependency install failed:\n" + result.stderr.decode())
+    ok("Dependencies installed")
+
+
+def copy_files(source_dir: Path, install_dir: Path):
+    step("Copying files...")
+    SKIP = {'installer.py', 'build_installer.py', 'build', 'dist',
+            '__pycache__', '.git', 'release', '.DS_Store'}
+    try:
+        install_dir.mkdir(parents=True, exist_ok=True)
+        for item in source_dir.iterdir():
+            if item.name in SKIP or item.name.startswith('.'):
+                continue
+            dest = install_dir / item.name
+            if item.is_file():
+                shutil.copy2(item, dest)
+            elif item.is_dir():
+                if dest.exists():
+                    shutil.rmtree(dest)
+                shutil.copytree(item, dest)
+        ok(f"Installed to {install_dir}")
+    except Exception as e:
+        die(f"Failed to copy files: {e}")
+
+
+def create_launcher(install_dir: Path, bin_dir: Path):
+    step("Creating launcher...")
+    try:
+        bin_dir.mkdir(parents=True, exist_ok=True)
+        system = platform.system()
+
+        if system == 'Windows':
+            launcher = bin_dir / 'aegis.bat'
+            script   = install_dir / 'aegis_shell.py'
+            launcher.write_text(
+                f'@echo off\n"{sys.executable}" "{script}" %*\n',
+                encoding='ascii'
+            )
         else:
-            with open(key_file, 'rb') as f:
-                key = f.read()
-        self.encryption_key = Fernet(key)
-        
-    def encrypt_api_key(self, api_key):
-        """Encrypt API key for storage"""
-        return self.encryption_key.encrypt(api_key.encode()).decode()
-        
-    def decrypt_api_key(self, encrypted_key):
-        """Decrypt stored API key"""
-        return self.encryption_key.decrypt(encrypted_key.encode()).decode()
-        
-    def check_python(self):
-        """Check if Python is installed and has correct version"""
-        if sys.version_info < (3, 8):
-            print("Error: Python 3.8 or higher is required")
-            return False
-        return True
-        
-    def install_dependencies(self):
-        """Install required Python packages"""
+            launcher = bin_dir / 'aegis'
+            script   = install_dir / 'aegis_shell.py'
+            launcher.write_text(
+                f'#!/usr/bin/env bash\nexec "{sys.executable}" "{script}" "$@"\n'
+            )
+            os.chmod(launcher, 0o755)
+
+        ok(f"Launcher → {launcher}")
+        _ensure_on_path(bin_dir, system)
+    except Exception as e:
+        die(f"Failed to create launcher: {e}")
+
+
+def _ensure_on_path(bin_dir: Path, system: str):
+    bin_str = str(bin_dir)
+
+    if system == 'Windows':
+        import winreg
         try:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', str(self.requirements_file)])
-            return True
-        except subprocess.CalledProcessError:
-            print("Error: Failed to install dependencies")
-            return False
-            
-    def copy_files(self):
-        """Copy shell files to installation directory"""
-        try:
-            # Create installation directory
-            self.install_dir.mkdir(parents=True, exist_ok=True)
-            
-            # Copy all Python files and directories
-            for item in self.base_dir.glob('*'):
-                if item.name not in ['installer.py', 'build', 'dist', '__pycache__']:
-                    if item.is_file():
-                        shutil.copy2(item, self.install_dir)
-                    elif item.is_dir():
-                        shutil.copytree(item, self.install_dir / item.name, dirs_exist_ok=True)
-                        
-            return True
-        except Exception as e:
-            print(f"Error: Failed to copy files: {e}")
-            return False
-            
-    def add_to_path(self):
-        """Add installation directory to system PATH"""
-        if platform.system() == 'Windows':
-            try:
-                # Get current PATH
-                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment', 0, winreg.KEY_ALL_ACCESS) as key:
-                    path_value, _ = winreg.QueryValueEx(key, 'Path')
-                    paths = path_value.split(';')
-                    
-                    # Add installation directory if not in PATH
-                    if str(self.install_dir) not in paths:
-                        paths.append(str(self.install_dir))
-                        new_path = ';'.join(paths)
-                        winreg.SetValueEx(key, 'Path', 0, winreg.REG_EXPAND_SZ, new_path)
-                        
-                # Notify system of PATH change
-                subprocess.run(['setx', 'PATH', f'%PATH%;{self.install_dir}'], shell=True)
-                return True
-            except Exception as e:
-                print(f"Error: Failed to add to PATH: {e}")
-                return False
-        else:
-            # For Linux/Mac
-            try:
-                shell = os.environ.get('SHELL', '')
-                if 'bash' in shell:
-                    rc_file = Path.home() / '.bashrc'
-                elif 'zsh' in shell:
-                    rc_file = Path.home() / '.zshrc'
-                else:
-                    return False
-                    
-                with open(rc_file, 'a') as f:
-                    f.write(f'\nexport PATH="$PATH:{self.install_dir}"\n')
-                return True
-            except Exception as e:
-                print(f"Error: Failed to add to PATH: {e}")
-                return False
-                
-    def get_openrouter_models(self):
-        """Get list of available models from OpenRouter"""
-        try:
-            response = requests.get('https://openrouter.ai/api/v1/models')
-            if response.status_code == 200:
-                return response.json().get('data', [])
-            return []
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment',
+                                0, winreg.KEY_ALL_ACCESS) as key:
+                current, _ = winreg.QueryValueEx(key, 'Path')
+                if bin_str not in current:
+                    winreg.SetValueEx(key, 'Path', 0, winreg.REG_EXPAND_SZ,
+                                      f"{bin_str};{current}")
+                    ok(f"Added {bin_dir} to user PATH")
         except Exception:
-            return []
-            
-    def setup_first_time(self):
-        """Handle first-time setup and API key configuration"""
-        # Create config directory
-        self.config_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Set up encryption
-        self.setup_encryption()
-        
-        # Get available models
-        models = self.get_openrouter_models()
-        if not models:
-            print("Error: Could not fetch available models")
-            return False
-            
-        # Show model selection
-        print("\nAvailable OpenRouter Models:")
-        for i, model in enumerate(models, 1):
-            print(f"{i}. {model['name']} - {model['description']}")
-            
-        # Get model selection
-        while True:
-            try:
-                choice = int(input("\nSelect a model (enter number): "))
-                if 1 <= choice <= len(models):
-                    selected_model = models[choice - 1]
-                    break
-                print("Invalid selection")
-            except ValueError:
-                print("Please enter a number")
-                
-        # Get API key
-        while True:
-            api_key = getpass.getpass("\nEnter your OpenRouter API key: ")
-            if api_key:
+            warn(f"Could not update PATH — add {bin_dir} manually")
+    else:
+        for rc in [Path.home() / f for f in ('.zshrc', '.bashrc', '.bash_profile', '.profile')]:
+            if rc.exists():
+                content = rc.read_text()
+                if bin_str not in content:
+                    rc.write_text(content + f'\nexport PATH="{bin_str}:$PATH"\n')
+                    ok(f"Added {bin_dir} to PATH in {rc.name}")
                 break
-            print("API key cannot be empty")
-            
-        # Save configuration
-        config = {
-            'model': selected_model['name'],
-            'api_key': self.encrypt_api_key(api_key),
-            'first_run': False
-        }
-        
-        try:
-            with open(self.config_dir / 'config.json', 'w') as f:
-                json.dump(config, f, indent=4)
-            return True
-        except Exception as e:
-            print(f"Error: Failed to save configuration: {e}")
-            return False
-            
-    def create_shortcuts(self):
-        """Create desktop and start menu shortcuts"""
-        if platform.system() == 'Windows':
-            try:
-                import winshell
-                from win32com.client import Dispatch
-                
-                # Desktop shortcut
-                desktop = winshell.desktop()
-                path = os.path.join(desktop, "Aegis Shell.lnk")
-                
-                shell = Dispatch('WScript.Shell')
-                shortcut = shell.CreateShortCut(path)
-                shortcut.Targetpath = str(self.install_dir / 'aegis_shell.py')
-                shortcut.WorkingDirectory = str(self.install_dir)
-                shortcut.save()
-                
-                # Start menu shortcut
-                start_menu = winshell.start_menu()
-                path = os.path.join(start_menu, "Programs", "Aegis Shell.lnk")
-                
-                shortcut = shell.CreateShortCut(path)
-                shortcut.Targetpath = str(self.install_dir / 'aegis_shell.py')
-                shortcut.WorkingDirectory = str(self.install_dir)
-                shortcut.save()
-                
-                return True
-            except Exception as e:
-                print(f"Error: Failed to create shortcuts: {e}")
-                return False
-        return True
-        
-    def install(self):
-        """Run the complete installation process"""
-        print("Starting Aegis Shell installation...")
-        
-        # Check Python version
-        if not self.check_python():
-            return False
-            
-        # Install dependencies
-        print("\nInstalling dependencies...")
-        if not self.install_dependencies():
-            return False
-            
-        # Copy files
-        print("\nCopying files...")
-        if not self.copy_files():
-            return False
-            
-        # Add to PATH
-        print("\nAdding to system PATH...")
-        if not self.add_to_path():
-            return False
-            
-        # Create shortcuts
-        print("\nCreating shortcuts...")
-        if not self.create_shortcuts():
-            return False
-            
-        # First-time setup
-        print("\nSetting up configuration...")
-        if not self.setup_first_time():
-            return False
-            
-        print("\nInstallation completed successfully!")
-        print(f"Aegis Shell has been installed to: {self.install_dir}")
-        print("You can now run 'aegis-shell' from any terminal")
-        return True
-        
+
+
+def verify(install_dir: Path):
+    step("Verifying install...")
+    try:
+        result = subprocess.run(
+            [sys.executable, '-c',
+             f"import sys; sys.path.insert(0, {str(install_dir)!r}); import aegis_shell"],
+            capture_output=True, timeout=10
+        )
+        if result.returncode == 0:
+            ok("Aegis Shell is working")
+        else:
+            warn("Verification inconclusive — run 'aegis' in a new terminal to check")
+    except Exception:
+        warn("Verification inconclusive — run 'aegis' in a new terminal to check")
+
+
+def print_done(bin_dir: Path):
+    print()
+    hr()
+    print()
+    print(f"  {_c(Fore.GREEN, '✓  Aegis Shell installed successfully!')}")
+    print()
+    if platform.system() == 'Windows':
+        print("  Open a new terminal (or restart this one) and run:")
+    else:
+        print("  Open a new terminal and run:")
+    print()
+    print(f"      {_c(Fore.CYAN, 'aegis')}")
+    print()
+    hr()
+    print(f"  Docs     {_c(Fore.CYAN, 'github.com/tanishpoddar/aegis-shell')}")
+    print(f"  Issues   {_c(Fore.CYAN, 'github.com/tanishpoddar/aegis-shell/issues')}")
+    print(f"  Update   {_c(Fore.CYAN, 'aegis update')}")
+    hr()
+    print()
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+
 def main():
-    installer = AegisInstaller()
-    installer.install()
-    
-if __name__ == "__main__":
-    main() 
+    # Ensure UTF-8 output on Windows (box-drawing characters)
+    if platform.system() == 'Windows':
+        try:
+            sys.stdout.reconfigure(encoding='utf-8')
+        except Exception:
+            pass
+
+    source_dir  = Path(__file__).resolve().parent
+    install_dir = _default_install_dir()
+    bin_dir     = _default_bin_dir()
+
+    banner()
+    check_python()
+    print()
+    print(f"  {_c(Fore.WHITE, 'Installing Aegis Shell...')}")
+    print()
+
+    # If running from the source dir, copy → install_dir; otherwise install in-place
+    if source_dir == install_dir:
+        install_deps(install_dir)
+        _step_dummy = 1  # copy step skipped
+        create_launcher(install_dir, bin_dir)
+        verify(install_dir)
+    else:
+        install_deps(source_dir)
+        copy_files(source_dir, install_dir)
+        create_launcher(install_dir, bin_dir)
+        verify(install_dir)
+
+    print_done(bin_dir)
+
+
+if __name__ == '__main__':
+    main()

@@ -19,6 +19,14 @@
         "language": "javascript",
         "install_cmd": "winget install OpenJS.NodeJS"
     },
+    "pip": {
+        "language": "python",
+        "install_cmd": "winget install Python.Python.3.12"
+    },
+    "pip3": {
+        "language": "python",
+        "install_cmd": "winget install Python.Python.3.12"
+    },
     "flask": {
         "language": "python",
         "install_cmd": "pip install flask"
